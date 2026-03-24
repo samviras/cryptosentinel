@@ -87,3 +87,52 @@ export interface PortfolioResponse {
   total_pnl: number;
   total_pnl_percent: number;
 }
+
+export interface WatchlistItem {
+  id: string;
+  user_id: string;
+  symbol: string;
+  buy_target: number | null;
+  sell_target: number | null;
+  notes: string | null;
+  created_at: string;
+  current_price: number | null;
+  near_buy_target: boolean | null;
+  near_sell_target: boolean | null;
+}
+
+export interface WatchlistResponse {
+  items: WatchlistItem[];
+  count: number;
+}
+
+export interface GlobalMarket {
+  total_market_cap: number;
+  total_volume_24h: number;
+  btc_dominance: number;
+  eth_dominance: number;
+  market_cap_change_24h: number;
+  active_cryptocurrencies: number;
+}
+
+export interface Mover {
+  symbol: string;
+  price_usd: number;
+  change_24h: number;
+}
+
+export interface TopMoversResponse {
+  gainers: Mover[];
+  losers: Mover[];
+}
+
+export interface PublicPortfolioAllocation {
+  symbol: string;
+  percentage: number;
+}
+
+export interface PublicPortfolioResponse {
+  allocations: PublicPortfolioAllocation[];
+  total_holdings: number;
+  performance: string | null;
+}

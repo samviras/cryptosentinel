@@ -1,6 +1,6 @@
 import { useState, useEffect, useCallback } from 'react';
 import { PieChart, Pie, Cell, Tooltip, ResponsiveContainer, Legend } from 'recharts';
-import { Wallet, Trash2, TrendingUp, TrendingDown } from 'lucide-react';
+import { Wallet, Trash2, TrendingUp, TrendingDown, Share2, Copy, Check } from 'lucide-react';
 import { api } from '../utils/api';
 import type { PortfolioResponse } from '../types';
 
@@ -36,6 +36,10 @@ export function PortfolioTracker() {
   const [symbol, setSymbol] = useState('BTC');
   const [amount, setAmount] = useState('');
   const [buyPrice, setBuyPrice] = useState('');
+
+  const [shareToken, setShareToken] = useState<string | null>(null);
+  const [sharing, setSharing] = useState(false);
+  const [copied, setCopied] = useState(false);
 
   const fetchPortfolio = useCallback(async () => {
     try {
@@ -77,13 +81,57 @@ export function PortfolioTracker() {
     }
   };
 
+  const handleShare = async () => {
+    setSharing(true);
+    try {
+      const res = await api.sharePortfolio();
+      setShareToken(res.share_token);
+    } catch (e: any) {
+      setError(e.message);
+    } finally {
+      setSharing(false);
+    }
+  };
+
+  const handleCopyLink = async () => {
+    if (!shareToken) return;
+    const url = `${window.location.origin}${window.location.pathname}?portfolio=${shareToken}`;
+    await navigator.clipboard.writeText(url);
+    setCopied(true);
+    setTimeout(() => setCopied(false), 2000);
+  };
+
   const donutData = (data?.holdings || [])
     .filter((h) => h.current_value != null && h.current_value > 0)
     .map((h) => ({ name: h.symbol, value: h.current_value! }));
 
   return (
     <div>
-      <h2 className="text-lg font-semibold mb-4">Portfolio Tracker</h2>
+      <div className="flex items-center justify-between mb-4">
+        <h2 className="text-lg font-semibold">Portfolio Tracker</h2>
+        {data && data.holdings.length > 0 && (
+          <div className="flex items-center gap-2">
+            {shareToken ? (
+              <button
+                onClick={handleCopyLink}
+                className="flex items-center gap-1.5 text-xs px-3 py-1.5 bg-green-900/30 hover:bg-green-900/50 border border-green-700/40 text-green-400 rounded-lg transition-colors"
+              >
+                {copied ? <Check size={12} /> : <Copy size={12} />}
+                {copied ? 'Copied!' : 'Copy Link'}
+              </button>
+            ) : (
+              <button
+                onClick={handleShare}
+                disabled={sharing}
+                className="flex items-center gap-1.5 text-xs px-3 py-1.5 bg-gray-800 hover:bg-gray-700 border border-gray-700 text-gray-300 rounded-lg transition-colors disabled:opacity-50"
+              >
+                <Share2 size={12} />
+                {sharing ? 'Generating...' : 'Share Portfolio'}
+              </button>
+            )}
+          </div>
+        )}
+      </div>
 
       {/* Add holding form */}
       <div className="bg-gray-900 rounded-xl p-4 mb-6 border border-gray-800">
@@ -135,6 +183,21 @@ export function PortfolioTracker() {
 
       {error && <p className="text-red-400 text-sm mb-4">{error}</p>}
 
+      {shareToken && (
+        <div className="bg-gray-900 border border-green-700/30 rounded-lg p-3 mb-4 flex items-center gap-3">
+          <Share2 size={14} className="text-green-400 flex-shrink-0" />
+          <div className="flex-1 min-w-0">
+            <p className="text-xs text-green-400 font-medium mb-0.5">Portfolio share link generated</p>
+            <p className="text-xs text-gray-500 truncate">
+              {window.location.origin}{window.location.pathname}?portfolio={shareToken}
+            </p>
+          </div>
+          <button onClick={handleCopyLink} className="text-xs text-green-400 hover:text-green-300 flex-shrink-0">
+            {copied ? <Check size={14} /> : <Copy size={14} />}
+          </button>
+        </div>
+      )}
+
       {loading ? (
         <div className="flex justify-center py-8">
           <div className="animate-spin h-6 w-6 border-2 border-brand-500 border-t-transparent rounded-full" />
@@ -142,7 +205,8 @@ export function PortfolioTracker() {
       ) : !data || data.holdings.length === 0 ? (
         <div className="text-center py-12 text-gray-500">
           <Wallet size={32} className="mx-auto mb-3 opacity-30" />
-          <p>No holdings yet. Add your first position above.</p>
+          <p className="font-medium mb-1">No holdings yet</p>
+          <p className="text-sm">Add your first position above to track P&L.</p>
         </div>
       ) : (
         <div className="space-y-6">

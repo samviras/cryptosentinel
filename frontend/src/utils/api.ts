@@ -120,6 +120,16 @@ class ApiClient {
     return this.request<any>('/market/fear-greed');
   }
 
+  // Global market data
+  async getGlobalMarket() {
+    return this.request<any>('/market/global');
+  }
+
+  // Top movers
+  async getTopMovers() {
+    return this.request<any>('/market/movers');
+  }
+
   // Price Alerts
   async getPriceAlerts() {
     return this.request<{ alerts: any[]; count: number }>('/price-alerts');
@@ -150,6 +160,35 @@ class ApiClient {
 
   async deleteHolding(id: string) {
     return this.request(`/portfolio/${id}`, { method: 'DELETE' });
+  }
+
+  async sharePortfolio() {
+    return this.request<{ share_token: string }>('/portfolio/share', { method: 'POST' });
+  }
+
+  async getPublicPortfolio(shareToken: string) {
+    return this.request<any>(`/portfolio/public/${shareToken}`);
+  }
+
+  // Watchlist
+  async getWatchlist() {
+    return this.request<any>('/watchlist');
+  }
+
+  async addToWatchlist(symbol: string, buyTarget?: number, sellTarget?: number, notes?: string) {
+    return this.request<any>('/watchlist', {
+      method: 'POST',
+      body: JSON.stringify({
+        symbol,
+        buy_target: buyTarget ?? null,
+        sell_target: sellTarget ?? null,
+        notes: notes ?? null,
+      }),
+    });
+  }
+
+  async removeFromWatchlist(id: string) {
+    return this.request(`/watchlist/${id}`, { method: 'DELETE' });
   }
 }
 

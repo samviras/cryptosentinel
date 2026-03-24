@@ -47,7 +47,7 @@ function GaugeMeter({ value }: { value: number }) {
 
 
 
-export function FearGreedGauge() {
+export function FearGreedGauge({ compact = false }: { compact?: boolean }) {
   const [data, setData] = useState<FearGreedResponse | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -83,6 +83,24 @@ export function FearGreedGauge() {
       date: new Date(parseInt(entry.timestamp, 10) * 1000).toLocaleDateString('en-US', { month: 'short', day: 'numeric' }),
       value: parseInt(entry.value, 10),
     }));
+
+  if (compact) {
+    return (
+      <div className="p-5">
+        <div className="flex items-center gap-2 mb-3">
+          <span className="text-sm font-semibold text-gray-300">Fear &amp; Greed Index</span>
+        </div>
+        <div className="flex items-center gap-4">
+          <GaugeMeter value={currentValue} />
+          <div>
+            <p className="text-xs text-gray-500 mt-2">
+              {new Date(parseInt(data.current.timestamp, 10) * 1000).toLocaleDateString()}
+            </p>
+          </div>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div>
