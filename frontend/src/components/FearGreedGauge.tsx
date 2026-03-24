@@ -45,13 +45,7 @@ function GaugeMeter({ value }: { value: number }) {
   );
 }
 
-const SYMBOLS: Record<string, string> = {
-  '1': 'Extreme Fear',
-  '2': 'Fear',
-  '3': 'Neutral',
-  '4': 'Greed',
-  '5': 'Extreme Greed',
-};
+
 
 export function FearGreedGauge() {
   const [data, setData] = useState<FearGreedResponse | null>(null);
