@@ -13,6 +13,32 @@ logger = logging.getLogger(__name__)
 scheduler = AsyncIOScheduler()
 
 
+async def check_price_alerts(prices: list) -> None:
+    """Compare current prices against user price alerts and mark triggered ones."""
+    from datetime import datetime, timezone
+    from app.core.database import get_supabase
+
+    if not prices:
+        return
+
+    db = get_supabase()
+    prices_map = {p["symbol"]: float(p["price_usd"]) for p in prices}
+
+    result = db.table("user_price_alerts").select("*").eq("is_triggered", False).execute()
+    for alert in result.data or []:
+        current = prices_map.get(alert["symbol"])
+        if current is None:
+            continue
+        target = float(alert["target_price"])
+        direction = alert["direction"]
+        if (direction == "above" and current >= target) or (direction == "below" and current <= target):
+            db.table("user_price_alerts").update({
+                "is_triggered": True,
+                "triggered_at": datetime.now(timezone.utc).isoformat(),
+            }).eq("id", alert["id"]).execute()
+            logger.info(f"Price alert triggered: {alert['symbol']} {direction} ${target} (now ${current:.2f})")
+
+
 async def price_check_job():
     """Periodic job: fetch prices, store, and check for alerts."""
     try:
@@ -20,6 +46,7 @@ async def price_check_job():
         prices = await fetch_prices()
         await store_prices(prices)
         logger.info(f"Stored {len(prices)} price snapshots")
+        await check_price_alerts(prices)
     except Exception as e:
         logger.error(f"Price check failed: {e}")
 

@@ -43,3 +43,47 @@ export interface User {
   company_name?: string;
   tier: string;
 }
+
+export interface FearGreedEntry {
+  value: string;
+  value_classification: string;
+  timestamp: string;
+  time_until_update?: string;
+}
+
+export interface FearGreedResponse {
+  current: FearGreedEntry | null;
+  history: FearGreedEntry[];
+}
+
+export interface PriceAlert {
+  id: string;
+  user_id: string;
+  symbol: string;
+  target_price: number;
+  direction: 'above' | 'below';
+  is_triggered: boolean;
+  triggered_at: string | null;
+  created_at: string;
+}
+
+export interface PortfolioHolding {
+  id: string;
+  user_id: string;
+  symbol: string;
+  amount: number;
+  buy_price: number;
+  added_at: string;
+  current_price: number | null;
+  current_value: number | null;
+  pnl: number | null;
+  pnl_percent: number | null;
+}
+
+export interface PortfolioResponse {
+  holdings: PortfolioHolding[];
+  total_value: number;
+  total_cost: number;
+  total_pnl: number;
+  total_pnl_percent: number;
+}

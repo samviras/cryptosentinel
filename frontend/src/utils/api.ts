@@ -114,6 +114,43 @@ class ApiClient {
   async revokeApiKey(id: string) {
     return this.request(`/auth/api-keys/${id}`, { method: 'DELETE' });
   }
+
+  // Fear & Greed
+  async getFearGreed() {
+    return this.request<any>('/market/fear-greed');
+  }
+
+  // Price Alerts
+  async getPriceAlerts() {
+    return this.request<{ alerts: any[]; count: number }>('/price-alerts');
+  }
+
+  async createPriceAlert(symbol: string, target_price: number, direction: 'above' | 'below') {
+    return this.request<any>('/price-alerts', {
+      method: 'POST',
+      body: JSON.stringify({ symbol, target_price, direction }),
+    });
+  }
+
+  async deletePriceAlert(id: string) {
+    return this.request(`/price-alerts/${id}`, { method: 'DELETE' });
+  }
+
+  // Portfolio
+  async getPortfolio() {
+    return this.request<any>('/portfolio');
+  }
+
+  async addHolding(symbol: string, amount: number, buy_price: number) {
+    return this.request<any>('/portfolio', {
+      method: 'POST',
+      body: JSON.stringify({ symbol, amount, buy_price }),
+    });
+  }
+
+  async deleteHolding(id: string) {
+    return this.request(`/portfolio/${id}`, { method: 'DELETE' });
+  }
 }
 
 export const api = new ApiClient();

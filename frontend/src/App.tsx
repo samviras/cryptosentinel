@@ -1,5 +1,5 @@
 import { useState, useCallback } from 'react';
-import { Shield, RefreshCw, Bell, BarChart3, Key, LogOut } from 'lucide-react';
+import { Shield, RefreshCw, Bell, BarChart3, Key, LogOut, TrendingUp, Wallet } from 'lucide-react';
 import { api } from './utils/api';
 import { usePolling } from './hooks/useApi';
 import { PriceTable } from './components/PriceTable';
@@ -7,9 +7,12 @@ import { AlertFeed } from './components/AlertFeed';
 import { AnalysisPanel } from './components/AnalysisPanel';
 import { PriceChart } from './components/PriceChart';
 import { LoginForm } from './components/LoginForm';
+import { FearGreedGauge } from './components/FearGreedGauge';
+import { PriceAlerts } from './components/PriceAlerts';
+import { PortfolioTracker } from './components/PortfolioTracker';
 import type { Analysis } from './types';
 
-type Tab = 'prices' | 'alerts' | 'analysis' | 'keys';
+type Tab = 'prices' | 'alerts' | 'analysis' | 'keys' | 'market' | 'price-alerts' | 'portfolio';
 
 function Dashboard() {
   const [tab, setTab] = useState<Tab>('prices');
@@ -61,6 +64,9 @@ function Dashboard() {
     { id: 'prices', label: 'Prices', icon: BarChart3 },
     { id: 'alerts', label: 'Alerts', icon: Bell, badge: unreadCount },
     { id: 'analysis', label: 'AI Analysis', icon: RefreshCw },
+    { id: 'market', label: 'Fear & Greed', icon: TrendingUp },
+    { id: 'price-alerts', label: 'Price Alerts', icon: Bell },
+    { id: 'portfolio', label: 'Portfolio', icon: Wallet },
     { id: 'keys', label: 'API Keys', icon: Key },
   ];
 
@@ -178,6 +184,12 @@ function Dashboard() {
               />
             </div>
           )}
+
+          {tab === 'market' && <FearGreedGauge />}
+
+          {tab === 'price-alerts' && <PriceAlerts />}
+
+          {tab === 'portfolio' && <PortfolioTracker />}
 
           {tab === 'keys' && (
             <ApiKeysPanel />
