@@ -42,17 +42,48 @@ Be specific with numbers. No hedging. Institutional clients want clarity."""
 
 async def analyze_symbol(symbol: str, include_sentiment: bool = True) -> dict:
     """Run AI analysis on a symbol using Claude Haiku."""
-    # Gather data
-    current = await fetch_prices([symbol])
-    history = await fetch_price_history(symbol, days=7)
+    db = get_supabase()
 
-    if not current:
-        return {"error": f"No price data for {symbol}"}
+    # Use stored prices instead of hitting CoinGecko again
+    latest = (
+        db.table("price_snapshots")
+        .select("*")
+        .eq("symbol", symbol.upper())
+        .order("recorded_at", desc=True)
+        .limit(1)
+        .execute()
+    )
 
-    price_data = current[0]
+    if not latest.data:
+        # Fallback to live fetch only if no stored data
+        current = await fetch_prices([symbol])
+        if not current:
+            return {"error": f"No price data for {symbol}"}
+        price_data = current[0]
+    else:
+        row = latest.data[0]
+        price_data = {
+            "price_usd": float(row["price_usd"]),
+            "change_24h": float(row.get("change_24h", 0)),
+            "change_7d": float(row.get("change_7d", 0)),
+            "volume_24h": float(row.get("volume_24h", 0)),
+            "market_cap": float(row.get("market_cap", 0)),
+        }
+
+    # Get stored history from DB
+    history_rows = (
+        db.table("price_snapshots")
+        .select("price_usd, recorded_at")
+        .eq("symbol", symbol.upper())
+        .order("recorded_at", desc=True)
+        .limit(48)
+        .execute()
+    )
+    history = [{"timestamp": r["recorded_at"], "price_usd": float(r["price_usd"])} for r in (history_rows.data or [])]
+    history.reverse()
 
     # Build context for Haiku
-    recent_prices = history[-48:] if len(history) > 48 else history  # Last 48 data points
+    recent_prices = history[-48:] if len(history) > 48 else history
     price_points = [f"{p['timestamp']}: ${p['price_usd']:,.2f}" for p in recent_prices]
 
     user_prompt = f"""Analyze {symbol} market data:
@@ -72,7 +103,7 @@ Provide your analysis as JSON."""
 
     try:
         response = client.messages.create(
-            model="claude-3-5-haiku-latest",
+            model="claude-sonnet-4-20250514",
             max_tokens=1024,
             system=SYSTEM_PROMPT,
             messages=[{"role": "user", "content": user_prompt}],
@@ -152,7 +183,7 @@ If no alerts are warranted, return an empty array: []"""
 
     try:
         response = client.messages.create(
-            model="claude-3-5-haiku-latest",
+            model="claude-sonnet-4-20250514",
             max_tokens=2048,
             system="You are a crypto market alert system. Output valid JSON arrays only. Be selective — only flag genuinely noteworthy conditions.",
             messages=[{"role": "user", "content": prompt}],

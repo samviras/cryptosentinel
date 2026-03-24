@@ -25,11 +25,40 @@ async def price_check_job():
 
 
 async def alert_detection_job():
-    """Periodic job: run AI alert detection."""
+    """Periodic job: run AI alert detection using stored prices."""
     try:
         logger.info("Running AI alert detection...")
-        prices = await fetch_prices()
-        alerts = await detect_alerts(prices)
+        from app.services.price_monitor import get_latest_prices, DEFAULT_WATCHLIST
+        from app.core.database import get_supabase
+
+        db = get_supabase()
+        # Use stored prices instead of hitting CoinGecko again
+        stored_prices = []
+        for symbol in DEFAULT_WATCHLIST:
+            result = (
+                db.table("price_snapshots")
+                .select("*")
+                .eq("symbol", symbol)
+                .order("recorded_at", desc=True)
+                .limit(1)
+                .execute()
+            )
+            if result.data:
+                row = result.data[0]
+                stored_prices.append({
+                    "symbol": row["symbol"],
+                    "price_usd": float(row["price_usd"]),
+                    "volume_24h": float(row.get("volume_24h", 0)),
+                    "market_cap": float(row.get("market_cap", 0)),
+                    "change_24h": float(row.get("change_24h", 0)),
+                    "change_7d": float(row.get("change_7d", 0)),
+                })
+
+        if not stored_prices:
+            logger.info("No stored prices yet, skipping alert detection")
+            return
+
+        alerts = await detect_alerts(stored_prices)
         if alerts:
             stored = await process_alerts(alerts)
             logger.info(f"Generated {len(stored)} new alerts")
