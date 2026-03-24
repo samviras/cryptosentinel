@@ -80,13 +80,14 @@ def start_scheduler():
         replace_existing=True,
     )
 
-    scheduler.add_job(
-        alert_detection_job,
-        "interval",
-        seconds=settings.ai_analysis_interval_seconds,
-        id="alert_detection",
-        replace_existing=True,
-    )
+    # AI alert detection disabled — runs on-demand only to save API costs
+    # scheduler.add_job(
+    #     alert_detection_job,
+    #     "interval",
+    #     seconds=settings.ai_analysis_interval_seconds,
+    #     id="alert_detection",
+    #     replace_existing=True,
+    # )
 
     scheduler.start()
     logger.info(
